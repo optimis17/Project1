@@ -1,0 +1,22 @@
+#define WHITE    0
+#define BLACK    1
+#define EMPTY    2
+#define FALSE 0
+#define TRUE  1
+
+char board[8][8];
+int player1,player2;
+int scores[2];
+
+void init_game( )//초기 설정시 주어진 문제에서 처럼 흰돌과 검은돌을 사선방향으로 놓아준다. 
+{
+    memset( board, EMPTY, sizeof( board ) );
+    board[3][3] = BLACK;
+    board[4][4] = BLACK;
+    board[3][4] = WHITE;
+    board[4][3] = WHITE;
+    scores[WHITE] = 2;
+    scores[BLACK] = 2;
+    player1 = BLACK;
+}
+

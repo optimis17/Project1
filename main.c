@@ -13,8 +13,8 @@
 #define FALSE 0
 #define TRUE  1
 
-const char *row_names = "01234567";
-const char *col_names = "01234567";
+const char *row_names = "";
+const char *col_names = "";
 
 char board[8][8];
 int playable_direction[8][8][8];
@@ -26,34 +26,35 @@ int has_valid_move = FALSE;
 int scores[2];
 int black_score = 2;
 
-void init_game( )
+int main( )//게임을 진행하는 메인 함수 
 {
-    memset( board, EMPTY, sizeof( board ) );
-    board[3][3] = BLACK;
-    board[4][4] = BLACK;
-    board[3][4] = WHITE;
-    board[4][3] = WHITE;
-    scores[WHITE] = 2;
-    scores[BLACK] = 2;
-    player1 = BLACK;
+    init_game();
+    while ( !game_ended ){
+        if ( !wrong_move ) mark_playable_positions( );
+        if ( !has_valid_move )
+        {
+            if ( skipped_turn )
+            {
+                game_ended = 1;
+                draw( );
+                continue;
+            }
+            skipped_turn = 1;
+            change_current_player( );
+            continue;
+        }
+        skipped_turn = 0;
+        draw( );
+        display_score( );
+        display_current_player( );
+        display_wrong_move( );
+        make_next_move( );
+    }
+    display_winner( );
 }
 
-int valid_position( int i, int j )
-{
-    if ( i < 0 || i >= 8 || j < 0 || j >= 8 ) return FALSE;
-    return TRUE;
-}
 
-int distance( int i1, int j1, int i2, int j2 )
-{
-    int di = abs( i1 - i2 ), dj = abs( j1 - j2 );
-    if ( di > 0 ) return di;
-    return dj;
-}
-
-
-
-void mark_playable_positions( )
+void mark_playable_positions( )//돌을 뒤집을 수 있는 공간 표시 
 {
 	int i,j;
     has_valid_move = FALSE;
@@ -71,227 +72,8 @@ void mark_playable_positions( )
         }
     }
 }
-void capture_pieces(int i, int j)
-{
-	int player2 = (player1 + 1) % 2;
-	int position_1, position_2;
 
-	// Capture UL diagonal
-	if (playable_direction[i][j][0])
-	{
-		position_1 = i - 1, position_2 = j - 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 -= 1;
-			position_2 -= 1;
-		}
-	}
-
-	// Capture UP path
-	if (playable_direction[i][j][1])
-	{
-		position_1 = i - 1, position_2 = j;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 -= 1;
-		}
-	}
-
-	// Capture UR diagonal
-	if (playable_direction[i][j][2])
-	{
-		position_1 = i - 1, position_2 = j + 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 -= 1;
-			position_2 += 1;
-		}
-	}
-
-	// Capture LEFT path
-	if (playable_direction[i][j][3])
-	{
-		position_1 = i, position_2 = j - 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_2 -= 1;
-		}
-	}
-
-	// Capture RIGHT path
-	if (playable_direction[i][j][4])
-	{
-		position_1 = i, position_2 = j + 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_2 += 1;
-		}
-	}
-
-	// Capture DL diagonal
-	if (playable_direction[i][j][5])
-	{
-		position_1 = i + 1, position_2 = j - 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 += 1;
-			position_2 -= 1;
-		}
-	}
-
-	// Capture DOWN path
-	if (playable_direction[i][j][6])
-	{
-		position_1 = i + 1, position_2 = j;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 += 1;
-		}
-	}
-
-	// Capture DR diagonal
-	if (playable_direction[i][j][7])
-	{
-		position_1 = i + 1, position_2 = j + 1;
-		while (board[position_1][position_2] == player2)
-		{
-			board[position_1][position_2] = player1;
-			scores[player1]++;
-			scores[player2]--;
-			position_1 += 1;
-			position_2 += 1;
-		}
-	}
-}
-int able(int i, int j)
-{
-	memset(playable_direction[i][j], 0, 8);
-	if (!valid_position(i, j)) return FALSE;
-	if (board[i][j] != EMPTY) return FALSE;
-	int playable = FALSE;
-
-	int player2 = (player1 + 1) % 2;
-
-	// Test UL diagonal
-	int position_1 = i - 1, position_2 = j - 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-	{
-		position_1 -= 1;
-		position_2 -= 1;
-	}
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][0] = 1;
-		playable = TRUE;
-	}
-
-	// Test UP path
-	position_1 = i - 1, position_2 = j;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-		position_1 -= 1;
-
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][1] = 1;
-		playable = TRUE;
-	}
-
-	// Test UR diagonal
-	position_1 = i - 1, position_2 = j + 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-	{
-		position_1 -= 1;
-		position_2 += 1;
-	}
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][2] = 1;
-		playable = TRUE;
-	}
-
-	// Test LEFT path
-	position_1 = i, position_2 = j - 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-		position_2 -= 1;
-
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][3] = 1;
-		playable = TRUE;
-	}
-
-	// Test RIGHT path
-	position_1 = i, position_2 = j + 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-		position_2 += 1;
-
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][4] = 1;
-		playable = TRUE;
-	}
-
-	// Test DL diagonal
-	position_1 = i + 1, position_2 = j - 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-	{
-		position_1 += 1;
-		position_2 -= 1;
-	}
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][5] = 1;
-		playable = TRUE;
-	}
-
-	// Test DOWN path
-	position_1 = i + 1, position_2 = j;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-		position_1 += 1;
-
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][6] = 1;
-		playable = TRUE;
-	}
-
-	// Test DR diagonal
-	position_1 = i + 1, position_2 = j + 1;
-	while (valid_position(position_1, position_2) && board[position_1][position_2] == player2)
-	{
-		position_1 += 1;
-		position_2 += 1;
-	}
-	if (valid_position(position_1, position_2) && distance(i, j, position_1, position_2) > 1 && board[position_1][position_2] == player1)
-	{
-		playable_direction[i][j][7] = 1;
-		playable = TRUE;
-	}
-	return playable;
-}
-
-void draw( )
+void draw( )//보드판을 그리는 함수 
 {	
 	int i,j;
     printf( "     %c     %c     %c     %c     %c     %c     %c     %c\n", col_names[0], col_names[1], col_names[2], col_names[3], col_names[4], col_names[5], col_names[6], col_names[7] );
@@ -323,7 +105,7 @@ void draw( )
     printf( "\n" );
 }
 
-void display_wrong_move( )
+void display_wrong_move( )//놓을 수 없는 공간에 사용자가 돌을 놓았을 경우 
 {
     if ( wrong_move )
     {
@@ -334,7 +116,7 @@ void display_wrong_move( )
     }
 }
 
-void display_current_player( )
+void display_current_player( )//현재 차례인 사용자를 표시하고 그 사용자의 차례에 맞도록 돌의 색을 맞추어 준다. 
 {
     printf( "이번 차례는 :" );
     if ( player1 == WHITE )
@@ -344,7 +126,7 @@ void display_current_player( )
     printf( "\n" );
 }
 
-void change_current_player( )
+void change_current_player( )//사용자는 2명이므로 다음과 같이 다음 차례를 인식한다 
 {
     player1 = ( player1 + 1 ) % 2;
 }
@@ -371,7 +153,7 @@ void make_next_move( )
     else wrong_move = TRUE;
 }
 
-void display_winner( )
+void display_winner( )//돌을 모두 놓은 후에 승리한 사용자를 표시한다. 
 {
     printf( "Final score:\n%s: %d %s: %d\n", WHITE_MARKER, scores[WHITE], BLACK_MARKER, scores[BLACK] );
     if ( scores[WHITE] > scores[BLACK] )
@@ -379,37 +161,128 @@ void display_winner( )
     else if ( scores[WHITE] < scores[BLACK] )
         printf( "%s 승리.\n", BLACK_MARKER );
     else
-        printf( "Draw game.\n" );
+        printf("무승부.\n" );
 }
 
-void display_score( )
+void display_score( )//현재 점수 표시 
 {
     printf( "%s: %d %s: %d\n", WHITE_MARKER, scores[WHITE], BLACK_MARKER, scores[BLACK] );
 }
 
-int main( )
+void capture_pieces(int i, int j)//선택한 방향에  돌 놓기  
 {
-    init_game();
-    while ( !game_ended ){
-        if ( !wrong_move ) mark_playable_positions( );
-        if ( !has_valid_move )
-        {
-            if ( skipped_turn )
-            {
-                game_ended = 1;
-                draw( );
-                continue;
-            }
-            skipped_turn = 1;
-            change_current_player( );
-            continue;
-        }
-        skipped_turn = 0;
-        draw( );
-        display_score( );
-        display_current_player( );
-        display_wrong_move( );
-        make_next_move( );
-    }
-    display_winner( );
+	int player2 = (player1 + 1) % 2;
+	int position_1, position_2;
+
+	// 왼쪽 위 대각선 
+	if (playable_direction[i][j][0])
+	{
+		position_1 = i - 1, position_2 = j - 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 -= 1;
+			position_2 -= 1;
+		}
+	}
+
+	// 위칸 체크 	
+	if (playable_direction[i][j][1])
+	{
+		position_1 = i - 1, position_2 = j;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 -= 1;
+		}
+	}
+
+	// 오른쪽 위칸 체크 
+	if (playable_direction[i][j][2])
+	{
+		position_1 = i - 1, position_2 = j + 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 -= 1;
+			position_2 += 1;
+		}
+	}
+
+	// 왼쪽 칸 체크
+	if (playable_direction[i][j][3])
+	{
+		position_1 = i, position_2 = j - 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_2 -= 1;
+		}
+	}
+
+	// Capture RIGHT path
+	if (playable_direction[i][j][4])
+	{
+		position_1 = i, position_2 = j + 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_2 += 1;
+		}
+	}
+
+	// 오른쪽 아래 사선 체크
+	if (playable_direction[i][j][5])
+	{
+		position_1 = i + 1, position_2 = j - 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 += 1;
+			position_2 -= 1;
+		}
+	}
+
+	// 아래 칸 체크
+	if (playable_direction[i][j][6])
+	{
+		position_1 = i + 1, position_2 = j;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 += 1;
+		}
+	}
+
+	// 오른쪽 아래 칸 체크
+	if (playable_direction[i][j][7])
+	{
+		position_1 = i + 1, position_2 = j + 1;
+		while (board[position_1][position_2] == player2)
+		{
+			board[position_1][position_2] = player1;
+			scores[player1]++;
+			scores[player2]--;
+			position_1 += 1;
+			position_2 += 1;
+		}
+	}
 }
+
+
+
+
